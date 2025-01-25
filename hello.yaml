@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    metadata:
+      name: flask-hello-world
+    spec:
+      replicas: 1
+      selector:
+        app: flask-hello-world
+      template:
+        metadata:
+          labels:
+            app: flask-hello-world
+        spec:
+          containers:
+            - name: flask-hello-world
+              image: python:3.9
+              command: ["python", "-m", "flask", "run", "--host=0.0.0.0"]
+              env:
+                - name: FLASK_APP
+                  value: /app/app.py
+                - name: FLASK_RUN_PORT
+                  value: "8080"
+              ports:
+                - containerPort: 8080
+              volumeMounts:
+                - name: flask-app-volume
+                  mountPath: /app
+          volumes:
+            - name: flask-app-volume
+              configMap:
+                name: flask-app-config
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: flask-app-config
+    data:
+      app.py: |
+        from flask import Flask
+
+        app = Flask(__name__)
+
+        @app.route("/")
+        def hello_world():
+            return "Hello, World!"
+
+        if __name__ == "__main__":
+            app.run(host="0.0.0.0", port=8080)
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: flask-hello-world
+    spec:
+      selector:
+        app: flask-hello-world
+      ports:
+        - protocol: TCP
+          port: 8080
+          targetPort: 8080
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      name: flask-hello-world
+    spec:
+      to:
+        kind: Service
+        name: flask-hello-world
+      port:
+        targetPort: 8080
