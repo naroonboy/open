@@ -17,7 +17,7 @@ items:
           containers:
             - name: flask-hello-world
               image: python:3.9
-              command: ["python", "-m", "flask", "run", "--host=0.0.0.0"]
+              command: command: ["/bin/sh", "-c", "pip install flask && python -m flask run --host=0.0.0.0 --port=8080"]
               env:
                 - name: FLASK_APP
                   value: /app/app.py
